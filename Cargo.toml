@@ -1,0 +1,9 @@
+[package]
+name = "hashlife"
+version = "0.1.0"
+authors = ["teaearlgraycold <teaearlgraycold@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+glium = "0.25.0"
+rand = "0.6.5"
