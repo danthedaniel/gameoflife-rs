@@ -2,17 +2,19 @@
 extern crate glium;
 extern crate rand;
 
-use std::time::SystemTime;
+mod gol;
+mod state;
 
 use glium::texture::Texture2d;
 use glium::uniforms::MagnifySamplerFilter::Nearest;
+use glium::uniforms::SamplerWrapFunction::Repeat;
 use glium::{glutin, Display, Surface};
 
 use glutin::dpi::LogicalSize;
-
-mod gol;
+use glutin::VirtualKeyCode;
 
 use gol::GoL;
+use state::GameState;
 
 #[derive(PartialEq)]
 enum ProgramStatus {
@@ -102,26 +104,32 @@ fn run_shader() -> Result<ProgramStatus, &'static str> {
     let mut game = GoL::new((128, 128));
     game.randomize();
 
-    let mut closed = false;
-    let mut cursor = (0f64, 0f64);
-    let mut left_press = false;
+    let mut state = GameState::new();
     let mut running = true;
 
-    let start = SystemTime::now();
-    let mut time = 0.0;
+    while state.open {
+        state.tick();
 
-    while !closed {
         if running {
             game.step();
-            time = SystemTime::now().duration_since(start).unwrap().as_millis() as f32 / 1000.0;
+        }
+
+        if state.key_pressed(VirtualKeyCode::Space) {
+            running = !running;
+        }
+
+        if state.key_pressed(VirtualKeyCode::R) {
+            game.randomize();
         }
 
         let texture = Texture2d::new(&display, game.as_raw_image_2d()).unwrap();
         let uniforms = uniform! {
-            texture: texture.sampled().magnify_filter(Nearest),
-            time: time
+            texture: texture.sampled().magnify_filter(Nearest).wrap_function(Repeat),
+            time: state.time
         };
+
         let mut target = display.draw();
+
         target.clear_color(1.0, 1.0, 1.0, 1.0);
         target
             .draw(
@@ -135,55 +143,8 @@ fn run_shader() -> Result<ProgramStatus, &'static str> {
         target.finish().unwrap();
 
         events_loop.poll_events(|event| {
-            use glutin::WindowEvent::*;
-
-            match event {
-                glutin::Event::WindowEvent { event, .. } => match event {
-                    CloseRequested => {
-                        closed = true;
-                    }
-                    KeyboardInput { input, .. } => {
-                        use glutin::ElementState::*;
-                        use glutin::VirtualKeyCode::*;
-
-                        if let (Some(Space), Pressed) = (input.virtual_keycode, input.state) {
-                            game.randomize();
-                        }
-                    }
-                    MouseInput {
-                        state,
-                        button: glutin::MouseButton::Left,
-                        ..
-                    } => {
-                        use glutin::ElementState::*;
-
-                        match state {
-                            Pressed => {
-                                left_press = true;
-                                running = false;
-                                game[cursor] = true;
-                            }
-                            Released => {
-                                left_press = false;
-                                running = true;
-                            }
-                        }
-                    }
-                    CursorMoved { position, .. } => {
-                        let window_size = display.get_framebuffer_dimensions();
-
-                        cursor = (
-                            position.x / window_size.0 as f64,
-                            1.0 - position.y / window_size.1 as f64,
-                        );
-
-                        if left_press {
-                            game[cursor] = true;
-                        }
-                    }
-                    _ => (),
-                },
-                _ => (),
+            if let glutin::Event::WindowEvent { event, .. } = event {
+                state.update(event);
             }
         });
     }

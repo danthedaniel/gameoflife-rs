@@ -27,11 +27,11 @@ vec3 hsv2rgb(vec3 c) {
 
 
 void main() {
-    vec2 rotated_pos = rotate(pos - vec2(0.5), sin(time)) + vec2(0.5);
+    vec2 skewed_pos = vec2(pos.y * (pos.x * 2.0 - 1.0), time / 5.0) + pos;
 
-    float hue = rotated_pos.x + rotated_pos.y;
+    float hue = skewed_pos.x + skewed_pos.y;
     float saturation = 0.85;
-    float value = texture2D(texture, rotated_pos).r;
+    float value = texture2D(texture, skewed_pos).r;
 
     vec3 sample = hsv2rgb(vec3(hue, saturation, value));
 

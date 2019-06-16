@@ -32,6 +32,7 @@ impl GoL {
 
     /// Execute one generation of the game.
     pub fn step(&mut self) {
+        // Space... the final frontier.
         let mut next_gen = self.clone();
 
         for x in 0..self.width {
@@ -54,7 +55,7 @@ impl GoL {
             (2..=3, true) => true,  // Goldilocks zone
             (3..=8, true) => false, // Overcrowded
             (3, false) => true,     // Spontaneous reproduction
-            _ => false,
+            _ => false,             // From nothing comes nothing
         }
     }
 
@@ -72,7 +73,7 @@ impl GoL {
             self[(x + 1, y + 1)],
         ]
         .iter()
-        .fold(0, |acc, &x| acc + x as u8)
+        .fold(0, |total, &neighbor| total + neighbor as u8)
     }
 
     /// Convert to an image for use by Glium.
