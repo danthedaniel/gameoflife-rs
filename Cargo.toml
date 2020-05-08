@@ -1,7 +1,7 @@
 [package]
-name = "hashlife"
+name = "gameoflife"
 version = "0.1.0"
-authors = ["teaearlgraycold <teaearlgraycold@protonmail.com>"]
+authors = ["danthedaniel <me@danangell.com>"]
 edition = "2018"
 
 [dependencies]

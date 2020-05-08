@@ -1,6 +1,7 @@
+use std::ops::{Index, IndexMut};
+
 use glium::texture::RawImage2d;
 use rand::{thread_rng, RngCore};
-use std::ops::{Index, IndexMut};
 
 /// Conway's Game of Life.
 #[derive(Clone)]
@@ -77,7 +78,9 @@ impl GoL {
     }
 
     /// Convert to an image for use by Glium.
-    pub fn as_raw_image_2d(&self) -> RawImage2d<'_, u8> {
+    pub fn as_raw_image_2d(&self) -> RawImage2d<'static, u8> {
+        // TODO: This needs to be built left-to-right, bottom-to-top. Currently
+        // it's top-to-bottom so the texture is flipped.
         let mut image_data = vec![0u8; (self.width * self.height * 4) as usize];
 
         for (index, &cell) in self.buffer.iter().enumerate() {
@@ -112,28 +115,5 @@ impl IndexMut<(i32, i32)> for GoL {
         let y = index.1 % self.height;
 
         &mut self.buffer[(y * self.height as i32 + x) as usize]
-    }
-}
-
-impl Index<(f64, f64)> for GoL {
-    type Output = bool;
-
-    fn index(&self, index: (f64, f64)) -> &bool {
-        let x = ((index.0 % 1.0) * self.width as f64) as usize;
-        let y = ((index.1 % 1.0) * self.height as f64) as usize;
-
-        &self
-            .buffer
-            .get(y * self.height as usize + x)
-            .unwrap_or(&false)
-    }
-}
-
-impl IndexMut<(f64, f64)> for GoL {
-    fn index_mut(&mut self, index: (f64, f64)) -> &mut bool {
-        let x = ((index.0 % 1.0) * self.width as f64) as usize;
-        let y = ((index.1 % 1.0) * self.height as f64) as usize;
-
-        &mut self.buffer[y * self.height as usize + x]
     }
 }

@@ -4,6 +4,10 @@ extern crate rand;
 
 mod gol;
 mod state;
+mod vertex;
+
+use std::collections::VecDeque;
+use std::time::SystemTime;
 
 use glium::texture::Texture2d;
 use glium::uniforms::MagnifySamplerFilter::Nearest;
@@ -13,39 +17,27 @@ use glium::{glutin, Display, Surface};
 use glutin::dpi::LogicalSize;
 use glutin::VirtualKeyCode;
 
-use gol::GoL;
-use state::GameState;
+use state::{GameState, Tick, GAME_HEIGHT, GAME_WIDTH};
+use vertex::fullscreen;
+
+const WINDOW_WIDTH: f64 = 750.0;
+const WINDOW_HEIGHT: f64 = 750.0;
 
 #[derive(PartialEq)]
 enum ProgramStatus {
     Done,
 }
 
-#[derive(Copy, Clone)]
-struct Vertex {
-    position: [f32; 2],
-    tex_coords: [f32; 2],
-}
-implement_vertex!(Vertex, position, tex_coords);
-
 fn main() {
-    loop {
-        match run_shader() {
-            Ok(status) => {
-                if status == ProgramStatus::Done {
-                    return;
-                }
-            }
-            Err(e) => {
-                eprintln!("Error: {}", e);
-                return;
-            }
-        }
+    let mut state = GameState::new();
+
+    if let Err(msg) = run(&mut state) {
+        eprintln!("{}", msg);
     }
 }
 
 fn init_display(events_loop: &glutin::EventsLoop) -> Result<Display, &'static str> {
-    let window_size = LogicalSize::new(512.0, 512.0);
+    let window_size = LogicalSize::new(WINDOW_WIDTH, WINDOW_HEIGHT);
     let window = glutin::WindowBuilder::new().with_title("Game of Life");
     let context = glutin::ContextBuilder::new();
 
@@ -53,36 +45,7 @@ fn init_display(events_loop: &glutin::EventsLoop) -> Result<Display, &'static st
         .map_err(|_| "Could not initialize the display.")
 }
 
-fn fullscreen() -> Vec<Vertex> {
-    vec![
-        Vertex {
-            position: [-1.0, -1.0],
-            tex_coords: [0.0, 0.0],
-        },
-        Vertex {
-            position: [-1.0, 1.0],
-            tex_coords: [0.0, 1.0],
-        },
-        Vertex {
-            position: [1.0, 1.0],
-            tex_coords: [1.0, 1.0],
-        },
-        Vertex {
-            position: [-1.0, -1.0],
-            tex_coords: [0.0, 0.0],
-        },
-        Vertex {
-            position: [1.0, 1.0],
-            tex_coords: [1.0, 1.0],
-        },
-        Vertex {
-            position: [1.0, -1.0],
-            tex_coords: [1.0, 0.0],
-        },
-    ]
-}
-
-fn run_shader() -> Result<ProgramStatus, &'static str> {
+fn run(state: &mut GameState) -> Result<ProgramStatus, &'static str> {
     // Set up window
     let mut events_loop = glutin::EventsLoop::new();
     let display = init_display(&events_loop)?;
@@ -101,36 +64,61 @@ fn run_shader() -> Result<ProgramStatus, &'static str> {
                 "GLSL compiler error"
             })?;
 
-    let mut game = GoL::new((128, 128));
-    game.randomize();
+    // Collect an initial texture from the game thread.
+    let mut texture = Texture2d::new(&display, state.tex_receiver.recv().unwrap()).unwrap();
 
-    let mut state = GameState::new();
-    let mut running = true;
+    let frame_times_max_size: usize = 10;
+    let mut frame_times: VecDeque<SystemTime> = VecDeque::new();
 
     while state.open {
-        state.tick();
+        frame_times.push_back(SystemTime::now());
+        state.frame();
 
-        if running {
-            game.step();
+        if frame_times.len() > frame_times_max_size {
+            let start_time = frame_times.pop_front().unwrap();
+            let delay = SystemTime::now()
+                .duration_since(start_time)
+                .unwrap()
+                .as_millis();
+            println!(
+                "{:.1} FPS\t{:.2} s\t{} ticks",
+                1000.0 / (delay as f32 / frame_times_max_size as f32),
+                state.simulation_time(),
+                state.tick_count
+            );
+        }
+
+        // Handle input events
+        if state.key_pressed(VirtualKeyCode::Q) {
+            state.open = false;
         }
 
         if state.key_pressed(VirtualKeyCode::Space) {
-            running = !running;
+            state.running = !state.running;
         }
 
         if state.key_pressed(VirtualKeyCode::R) {
-            game.randomize();
+            state.send(Tick::Randomize);
         }
 
-        let texture = Texture2d::new(&display, game.as_raw_image_2d()).unwrap();
+        if state.key_pressed(VirtualKeyCode::S) {
+            state.send(Tick::Continue);
+        }
+
+        // Update texture/uniforms
+        if let Ok(new_texture) = state.tex_receiver.try_recv() {
+            texture = Texture2d::new(&display, new_texture).unwrap();
+        };
+
         let uniforms = uniform! {
             texture: texture.sampled().magnify_filter(Nearest).wrap_function(Repeat),
-            time: state.time
+            time: state.simulation_time(),
+            board_size: [GAME_WIDTH as f32, GAME_HEIGHT as f32]
         };
 
         let mut target = display.draw();
 
-        target.clear_color(1.0, 1.0, 1.0, 1.0);
+        // target.clear_color(1.0, 1.0, 1.0, 1.0);
         target
             .draw(
                 &vertex_buffer,
@@ -144,7 +132,7 @@ fn run_shader() -> Result<ProgramStatus, &'static str> {
 
         events_loop.poll_events(|event| {
             if let glutin::Event::WindowEvent { event, .. } = event {
-                state.update(event);
+                state.consume_event(event);
             }
         });
     }
