@@ -62,16 +62,12 @@ impl GoL {
 
     /// Count living cells adjacent to a cell in the matrix.
     #[inline]
+    #[rustfmt::skip]
     fn alive_neighbors(&self, x: i32, y: i32) -> u8 {
         [
-            self[(x - 1, y - 1)],
-            self[(x - 1, y)],
-            self[(x - 1, y + 1)],
-            self[(x, y - 1)],
-            self[(x, y + 1)],
-            self[(x + 1, y - 1)],
-            self[(x + 1, y)],
-            self[(x + 1, y + 1)],
+            self[(x - 1, y - 1)], self[(x + 0, y - 1)], self[(x + 1, y - 1)],
+            self[(x - 1, y + 0)], /*  selected cell  */ self[(x + 1, y + 0)],
+            self[(x - 1, y + 1)], self[(x + 0, y + 1)], self[(x + 1, y + 1)],
         ]
         .iter()
         .fold(0, |total, &neighbor| total + neighbor as u8)
