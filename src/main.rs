@@ -104,7 +104,7 @@ fn run(state: &mut GameState) -> Result<ProgramStatus, &'static str> {
         }
 
         if state.key_pressed(VirtualKeyCode::S) {
-            state.send(Tick::Continue);
+            state.tick();
         }
 
         if state.key_pressed(VirtualKeyCode::Return) {
