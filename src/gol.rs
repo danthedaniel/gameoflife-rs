@@ -81,8 +81,6 @@ impl GoL {
 
     /// Convert to an image for use by Glium.
     pub fn as_raw_image_2d(&self) -> RawImage2d<'static, u8> {
-        // TODO: This needs to be built left-to-right, bottom-to-top. Currently
-        // it's top-to-bottom so the texture is flipped.
         let mut image_data = vec![0u8; (self.width * self.height * 4) as usize];
 
         for (index, &cell) in self.buffer.iter().enumerate() {
@@ -93,7 +91,7 @@ impl GoL {
             image_data[4 * index + 3] = cell;
         }
 
-        RawImage2d::from_raw_rgba(image_data, (self.width as u32, self.height as u32))
+        RawImage2d::from_raw_rgba_reversed(&image_data, (self.width as u32, self.height as u32))
     }
 }
 
