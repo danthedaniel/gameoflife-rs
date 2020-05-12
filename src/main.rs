@@ -70,7 +70,7 @@ fn run(state: &mut GameState) -> Result<ProgramStatus, &'static str> {
     let frame_times_max_size: usize = 10;
     let mut frame_times: VecDeque<SystemTime> = VecDeque::new();
 
-    let mut fullscreen = true;
+    let mut fullscreen = false;
 
     while state.open {
         frame_times.push_back(SystemTime::now());
@@ -111,13 +111,13 @@ fn run(state: &mut GameState) -> Result<ProgramStatus, &'static str> {
             fullscreen = !fullscreen;
 
             if fullscreen {
-                let wb = glutin::WindowBuilder::new();
-                let cb = glutin::ContextBuilder::new();
-                display.rebuild(wb, cb, &events_loop).unwrap();
-            } else {
                 let wb = glutin::WindowBuilder::new()
                     .with_decorations(false)
                     .with_fullscreen(Some(events_loop.get_primary_monitor()));
+                let cb = glutin::ContextBuilder::new();
+                display.rebuild(wb, cb, &events_loop).unwrap();
+            } else {
+                let wb = glutin::WindowBuilder::new();
                 let cb = glutin::ContextBuilder::new();
                 display.rebuild(wb, cb, &events_loop).unwrap();
             }
