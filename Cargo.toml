@@ -5,5 +5,5 @@ authors = ["danthedaniel <me@danangell.com>"]
 edition = "2018"
 
 [dependencies]
-glium = "0.25.0"
+glium = "0.25.1"
 rand = "0.6.5"
