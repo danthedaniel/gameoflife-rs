@@ -70,6 +70,8 @@ fn run(state: &mut GameState) -> Result<ProgramStatus, &'static str> {
     let frame_times_max_size: usize = 10;
     let mut frame_times: VecDeque<SystemTime> = VecDeque::new();
 
+    let mut fullscreen = true;
+
     while state.open {
         frame_times.push_back(SystemTime::now());
         state.frame();
@@ -105,20 +107,37 @@ fn run(state: &mut GameState) -> Result<ProgramStatus, &'static str> {
             state.send(Tick::Continue);
         }
 
+        if state.key_pressed(VirtualKeyCode::Return) {
+            fullscreen = !fullscreen;
+
+            if fullscreen {
+                let wb = glutin::WindowBuilder::new();
+                let cb = glutin::ContextBuilder::new();
+                display.rebuild(wb, cb, &events_loop).unwrap();
+            } else {
+                let wb = glutin::WindowBuilder::new()
+                    .with_decorations(false)
+                    .with_fullscreen(Some(events_loop.get_primary_monitor()));
+                let cb = glutin::ContextBuilder::new();
+                display.rebuild(wb, cb, &events_loop).unwrap();
+            }
+        }
+
         // Update texture/uniforms
         if let Ok(new_texture) = state.tex_receiver.try_recv() {
             texture = Texture2d::new(&display, new_texture).unwrap();
         };
 
+        let mut target = display.draw();
+        let dimensions = target.get_dimensions();
+
         let uniforms = uniform! {
             texture: texture.sampled().magnify_filter(Nearest).wrap_function(Repeat),
             time: state.simulation_time(),
-            board_size: [GAME_WIDTH as f32, GAME_HEIGHT as f32]
+            board_size: [GAME_WIDTH as f32, GAME_HEIGHT as f32],
+            window_size: [dimensions.0 as f32, dimensions.1 as f32],
         };
 
-        let mut target = display.draw();
-
-        // target.clear_color(1.0, 1.0, 1.0, 1.0);
         target
             .draw(
                 &vertex_buffer,

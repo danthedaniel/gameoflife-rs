@@ -190,7 +190,7 @@ impl GameState {
         self.time = time_millis as f32 / 1000.0;
 
         // Run next simulation frame if enough time has passed
-        if self.running || self.key_down(VirtualKeyCode::C) {
+        if self.running {
             while self.last_tick < self.time {
                 self.last_tick += TICK_DELAY;
                 self.tick();
@@ -210,17 +210,9 @@ impl GameState {
         }
     }
 
-    /// The number of seconds of game execution (excludes time when paused).
+    /// The number of seconds of runtime.
     pub fn simulation_time(&self) -> f32 {
-        let delta = self.time - self.last_tick;
-        let interpolation = if !self.running {
-            0f32
-        } else if delta < TICK_DELAY {
-            delta
-        } else {
-            TICK_DELAY
-        };
-        return self.tick_count as f32 * TICK_DELAY + interpolation;
+        return self.time;
     }
 
     /// Apply an event's changes to state.
