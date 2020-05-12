@@ -48,15 +48,21 @@ impl GoL {
     /// Execute one generation on a single cell.
     #[inline]
     fn automata_rules(&self, x: i32, y: i32) -> u8 {
-        let current_cell = self[(x, y)];
+        let current_state = self[(x, y)];
         let n_neighbors = self.alive_neighbors(x, y);
 
-        match (n_neighbors, current_cell != 0) {
-            (0..=1, true) => 0,                              // Underpopulated
-            (2..=3, true) => current_cell.saturating_add(1), // Goldilocks zone
-            (3..=8, true) => 0,                              // Overcrowded
-            (3, false) => current_cell.saturating_add(1),    // Spontaneous reproduction
-            _ => 0,                                          // From nothing comes nothing
+        let next_state = match (n_neighbors, current_state != 0) {
+            (0..=1, true) => false, // Underpopulated
+            (2..=3, true) => true,  // Goldilocks zone
+            (3..=8, true) => false, // Overcrowded
+            (3, false) => true,     // Spontaneous reproduction
+            _ => false,             // From nothing comes nothing
+        };
+
+        if next_state {
+            current_state.saturating_add(1)
+        } else {
+            0
         }
     }
 
