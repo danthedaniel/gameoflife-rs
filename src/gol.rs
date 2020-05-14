@@ -45,6 +45,40 @@ impl GoL {
         self.buffer = next_gen.buffer;
     }
 
+    #[rustfmt::skip]
+    pub fn insert_glider(&mut self) {
+        let mut glider = vec![
+            vec![0, 1, 0],
+            vec![0, 0, 1],
+            vec![1, 1, 1],
+        ];
+
+        let mut rng = thread_rng();
+        let flip_x = (rng.next_u32() & 0x00000001) == 0;
+        let flip_y = (rng.next_u32() & 0x00000001) == 0;
+
+        if flip_x {
+            glider = glider.iter().map(|row| row.iter().rev().map(|&cell| cell).collect()).collect();
+        }
+
+        if flip_y {
+            glider = glider.iter().rev().map(|row| row.clone()).collect();
+        }
+
+        let x = (rng.next_u32() % self.width as u32) as i32;
+        let y = (rng.next_u32() % self.height as u32) as i32;
+
+        self.insert_pattern(glider, x, y);
+    }
+
+    fn insert_pattern(&mut self, pattern: Vec<Vec<u8>>, x: i32, y: i32) {
+        for (y_offset, row) in pattern.iter().enumerate() {
+            for (x_offset, &cell) in row.iter().enumerate() {
+                self[(x + x_offset as i32, y + y_offset as i32)] = cell;
+            }
+        }
+    }
+
     /// Execute one generation on a single cell.
     #[inline]
     fn automata_rules(&self, x: i32, y: i32) -> u8 {

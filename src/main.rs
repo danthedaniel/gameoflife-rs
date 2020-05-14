@@ -107,6 +107,10 @@ fn run(state: &mut GameState) -> Result<ProgramStatus, &'static str> {
             state.tick();
         }
 
+        if state.key_pressed(VirtualKeyCode::G) {
+            state.send(Tick::RandomGlider);
+        }
+
         if state.key_pressed(VirtualKeyCode::Return) {
             fullscreen = !fullscreen;
 

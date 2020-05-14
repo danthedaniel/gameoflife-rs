@@ -44,6 +44,8 @@ pub enum Tick {
     Randomize,
     /// Terminate the simulation
     Quit,
+    /// Insert a randomly positioned glider
+    RandomGlider,
 }
 
 pub struct GameState {
@@ -115,13 +117,12 @@ impl GameState {
                 match tick_receiver.recv() {
                     Ok(Continue) => {
                         game.step();
-                        let texture = game.as_raw_image_2d();
-                        tex_sender.send(texture).unwrap();
                     }
                     Ok(Randomize) => {
                         game.randomize();
-                        let texture = game.as_raw_image_2d();
-                        tex_sender.send(texture).unwrap();
+                    }
+                    Ok(RandomGlider) => {
+                        game.insert_glider();
                     }
                     Ok(Quit) => {
                         return;
@@ -131,6 +132,9 @@ impl GameState {
                         return;
                     }
                 }
+
+                let texture = game.as_raw_image_2d();
+                tex_sender.send(texture).unwrap();
             }
         });
 
