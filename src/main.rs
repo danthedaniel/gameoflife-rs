@@ -91,7 +91,7 @@ fn run(state: &mut GameState) -> Result<ProgramStatus, &'static str> {
         }
 
         // Handle input events
-        if state.key_pressed(VirtualKeyCode::Q) {
+        if state.key_pressed(VirtualKeyCode::Q) || state.key_pressed(VirtualKeyCode::Escape) {
             state.open = false;
         }
 
