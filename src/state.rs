@@ -9,8 +9,8 @@ use glium::texture::RawImage2d;
 
 use super::gol::GoL;
 
-pub const GAME_WIDTH: usize = 64;
-pub const GAME_HEIGHT: usize = 64;
+pub const GAME_WIDTH: usize = 96;
+pub const GAME_HEIGHT: usize = 96;
 
 struct ButtonState {
     /// Whether the button/key is pressed.

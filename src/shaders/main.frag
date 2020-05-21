@@ -55,10 +55,10 @@ void main() {
     // Rainbow circular hue shift
     vec4 tex_sample = texture2D(texture, zoomed_pos);
     float hue = distance(quant(zoomed_pos, board_size), center) * 4.0 + (time / 5.0) / 2.0;
-    float saturation = 1.0 - clamp((tex_sample.w - (1.0 / 255.0)) * 16.0, 0.0, 1.0);
+    float saturation = 1.0 - clamp((tex_sample.w - (1.0 / 255.0)) * 2.0, 0.0, 1.0);
     float value = tex_sample.r;
 
-    vec4 shadow_sample = texture2D(texture, zoomed_pos + rotate(vec2(-0.003, 0.007), rotation * 0.8));
+    vec4 shadow_sample = texture2D(texture, zoomed_pos + rotate(vec2(-0.002, 0.004), rotation * 0.8));
     float shadow = shadow_sample.r;
 
     vec3 out_sample = vec3(0.0);
