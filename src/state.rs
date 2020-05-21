@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::mpsc::{channel, sync_channel, Receiver, SyncSender};
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::SystemTime;
@@ -105,7 +105,7 @@ impl GameState {
         Receiver<RawImage2d<'static, u8>>,
     ) {
         let (tick_sender, tick_receiver) = sync_channel::<Tick>(2);
-        let (tex_sender, tex_receiver) = channel::<RawImage2d<u8>>();
+        let (tex_sender, tex_receiver) = sync_channel::<RawImage2d<u8>>(2);
 
         let simulation_thread = thread::spawn(move || {
             let mut game = GoL::new((GAME_WIDTH, GAME_HEIGHT));
